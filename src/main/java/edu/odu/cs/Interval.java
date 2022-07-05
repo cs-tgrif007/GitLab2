@@ -21,6 +21,8 @@ public class Interval {
     high = max;
   }
 
+  // Missed a comment 
+
   /**
    * Is the interval empty? (I.e., true iff it contains no numbers.)
    * 

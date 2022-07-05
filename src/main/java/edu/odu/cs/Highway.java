@@ -24,6 +24,8 @@ public class Highway {
     }
   }
 
+  // This is a comment
+
   private void doIt(InputStream in) {
     Scanner input = new Scanner(in);
     double xMin = input.nextDouble();

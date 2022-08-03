@@ -1,6 +1,13 @@
 plugins {
     id "java"
     id "application"
+        
+    id "jacoco"
+    id "org.barfuin.gradle.jacocolog" version "2.0.0"
+
+	id "pmd"	
+    
+    id "checkstyle"
 }
 
 java {
@@ -13,10 +20,6 @@ repositories {
 }
 
 dependencies {
-    // Everything in src/main (production code).
-    // implementation ...
-
-    // Everything in src/test (test code)
     testImplementation "org.junit.jupiter:junit-jupiter:5.8.2"
     testImplementation "org.hamcrest:hamcrest-library:2.2"
 }
@@ -31,21 +34,88 @@ jar {
     }
 }
 
-run {
-    mainClass = "edu.odu.cs.Highway"
-    args = [0.0, 100.0, 20.0, 30.0, 40.0, 50.0]
-}
-
 test {
     useJUnitPlatform()
-
     reports {
         html.required = true
     }
-
     ignoreFailures = true
 
     testLogging {
         events "passed", "skipped", "failed", "standardOut", "standardError"
     }
+    finalizedBy jacocoTestReport
+}
+
+run {
+    mainClass = "edu.odu.cs.Highway"
+    args = [0.0, 100.0, 20.0, 30.0, 40.0, 50.0]
+}
+
+/* Documentation */ 
+javadoc {    
+	failOnError = false;     
+}
+
+/* Analysis */
+pmd {
+    toolVersion = "6.21.0"
+    ignoreFailures = true
+}
+
+pmdTest {
+	enabled = false
+}
+
+checkstyle {
+    toolVersion "8.42"
+    ignoreFailures = true
+    showViolations = false
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        html.destination project.file("build/reports/checkstyle/main.html")
+    }
+}
+
+checkstyleTest {
+    enabled = false
+}
+
+/* Website Deployment */
+task reportsAndDocumentation(dependsOn: [
+    "test",
+    "jacocoTestReport",
+    "checkstyleMain",
+    "javadoc",
+    "check",
+    "projectReport"])
+{
+    description "Generate all reports and documentation for this project."
+}
+
+task copyReports(type: Copy)
+{
+    dependsOn "reportsAndDocumentation"
+
+    from "build/reports"
+    into "build/tmp/website"
+
+    description "Copy all reports into website directory"
+}
+
+task copyDocumentation(type: Copy)
+{
+    dependsOn "reportsAndDocumentation"
+
+    from "build/docs"
+    into "build/tmp/website"
+
+    description "Copy Javadoc output into website directory."
+}
+
+task doAllTheCopying(dependsOn: ["copyReports", "copyDocumentation"])
+{
+    description "Copy all reports and documentation into website directory."
 }

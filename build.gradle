@@ -58,6 +58,11 @@ javadoc {
 }
 
 /* Analysis */
+jacoco {
+    toolVersion = "0.8.8"
+    reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
+}
+
 pmd {
     toolVersion = "6.21.0"
     ignoreFailures = true
@@ -118,4 +123,50 @@ task copyDocumentation(type: Copy)
 task doAllTheCopying(dependsOn: ["copyReports", "copyDocumentation"])
 {
     description "Copy all reports and documentation into website directory."
+}
+
+/* JBake */
+task copyJBakeTemplates(type: Copy)
+{
+    from "src/jbake"
+    into "build/tmp/website"
+    
+    description "Copy all JBake files into website directory"
+}
+
+task doAllTheJBakeCopying(dependsOn: [
+    "doAllTheCopying",
+    "copyJBakeTemplates"])
+{
+    description "Copy everything into the JBake working directory."
+}
+
+task buildHomePage(dependsOn: copyJBakeTemplates)
+{
+    inputs.files ("build/tmp/website/content/home0.md", "README.md")
+    outputs.file ("build/tmp/website/content/home.md")
+
+    doLast  {
+        outputs.files.singleFile.withOutputStream { out ->
+            for (file in inputs.files) file.withInputStream {
+                out << it << '\n'
+            }
+        }
+    }
+    
+    description "Create home markdown file"
+}
+
+jbake {
+    srcDirName = "build/tmp/website"
+}
+
+task setUpWebsite()
+{
+    dependsOn "buildHomePage"
+    dependsOn "doAllTheJBakeCopying"
+}
+
+bake {
+    dependsOn "setUpWebsite"
 }
